@@ -1,0 +1,32 @@
+{
+  "name": "rollup-plugin-asset-sync",
+  "version": "0.0.2",
+  "description": "Asset files synchronization for rollup",
+  "main": "dist/rollup-plugin-asset-sync.js",
+  "module": "dist/rollup-plugin-asset-sync.module.js",
+  "jsnext:main": "src/index.js",
+  "keywords": [
+    "rollup-plugin",
+    "asset",
+    "sync",
+    "copy"
+  ],
+  "homepage": "https://github.com/rosenbjerg/rollup-plugin-asset-sync",
+  "author": "Malte Rosenbjerg",
+  "license": "MIT",
+  "repository": "rosenbjerg/rollup-plugin-asset-sync",
+  "bugs": {
+    "url": "https://github.com/rosenbjerg/rollup-plugin-asset-sync/issues"
+  },
+  "scripts": {
+    "build": "npm run build:cjs && npm run build:module",
+    "build:cjs": "rollup --config --file ./dist/rollup-plugin-asset-sync.js -f cjs",
+    "build:module": "rollup --config --file ./dist/rollup-plugin-asset-sync.module.js -f es",
+    "dev": "rollup --config --watch --config rollup.dev.js"
+  },
+  "devDependencies": {
+    "rollup": "^0.64.1",
+    "rollup-plugin-buble": "^0.19.2",
+    "rollup-plugin-commonjs": "^9.1.5"
+  }
+}
