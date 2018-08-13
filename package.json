@@ -22,7 +22,7 @@
     "build": "npm run build:cjs && npm run build:module",
     "build:cjs": "rollup --config --file ./dist/rollup-plugin-asset-sync.js -f cjs",
     "build:module": "rollup --config --file ./dist/rollup-plugin-asset-sync.module.js -f es",
-    "dev": "rollup --config --watch --config rollup.dev.js"
+    "dev": "rollup --config --watch"
   },
   "devDependencies": {
     "rollup": "^0.64.1",
