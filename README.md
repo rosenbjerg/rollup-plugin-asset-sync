@@ -1,5 +1,5 @@
-###rollup-plugin-asset-sync
-#####Plugin for rollup that adds asset synchronization.
+### rollup-plugin-asset-sync
+##### Plugin for rollup that adds asset synchronization.
 
 The plugin copies all files found in the input directory into the output directory.
 Files are only overwritten if the last modified time of the two files are different.
