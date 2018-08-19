@@ -35,7 +35,11 @@ var dirOk = function (dir, create) {
     }
 };
 
-function syncDirs(input, output) {
+function syncDirs(ref) {
+    var input = ref.input;
+    var output = ref.output;
+    var verbose = ref.debug;
+
     if (!input || !output) {
         throw new Error("missing input and/or output directory");
     }
@@ -59,12 +63,14 @@ function syncDirs(input, output) {
     inputFiles.forEach(function (fIn) {
         var fOut = fIn.replace(inputPath, outputPath);
         if (!outputFiles.includes(fOut)) {
+            if (verbose) { console.log(("copy: " + fIn)); }
             return toCopy.push({in: fIn, out: fOut});
         }
         else {
             var fInStat = fs.statSync(fIn);
             var fOutStat = fs.statSync(fOut);
             if (fInStat.mtime !== fOutStat.mtime) {
+                if (verbose) { console.log(("overwrite: " + fIn)); }
                 return toCopy.push({in: fIn, out: fOut});
             }
         }
@@ -72,6 +78,7 @@ function syncDirs(input, output) {
     outputFiles.forEach(function (fOut) {
         var fIn = fOut.replace(inputPath, outputPath);
         if (!inputFiles.includes(fIn)) {
+            if (verbose) { console.log(("unlink: " + fIn)); }
             return toUnlink.push(fOut);
         }
     });
@@ -89,11 +96,13 @@ function syncDirs(input, output) {
 function sync(options) {
     if ( options === void 0 ) options = { };
 
-    var input = options.input;
-    var output = options.output;
+    var defaultOptions = {
+        debug: false
+    };
+    Object.assign(defaultOptions, options);
     return {
         name: 'asset-sync',
-        onwrite: function () { return syncDirs(input, output); },
+        onwrite: function () { return syncDirs(defaultOptions); },
     };
 }
 

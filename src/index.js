@@ -30,7 +30,7 @@ const dirOk = (dir, create = false) => {
     }
 };
 
-function syncDirs(input, output) {
+function syncDirs({input, output, debug: verbose}) {
     if (!input || !output) {
         throw new Error("missing input and/or output directory");
     }
@@ -54,12 +54,14 @@ function syncDirs(input, output) {
     inputFiles.forEach(fIn => {
         const fOut = fIn.replace(inputPath, outputPath);
         if (!outputFiles.includes(fOut)) {
+            if (verbose) console.log(`copy: ${fIn}`);
             return toCopy.push({in: fIn, out: fOut});
         }
         else {
             const fInStat = fs.statSync(fIn);
             const fOutStat = fs.statSync(fOut);
             if (fInStat.mtime !== fOutStat.mtime) {
+                if (verbose) console.log(`overwrite: ${fIn}`);
                 return toCopy.push({in: fIn, out: fOut});
             }
         }
@@ -67,6 +69,7 @@ function syncDirs(input, output) {
     outputFiles.forEach(fOut => {
         const fIn = fOut.replace(inputPath, outputPath);
         if (!inputFiles.includes(fIn)) {
+            if (verbose) console.log(`unlink: ${fIn}`);
             return toUnlink.push(fOut);
         }
     });
@@ -83,9 +86,12 @@ function syncDirs(input, output) {
  * @return {Object} The rollup code object.
  */
 export default function sync(options = { }) {
-    const { input, output } = options;
+    const defaultOptions = {
+        debug: false
+    };
+    Object.assign(defaultOptions, options);
     return {
         name: 'asset-sync',
-        onwrite: () => syncDirs(input, output),
+        onwrite: () => syncDirs(defaultOptions),
     };
 }

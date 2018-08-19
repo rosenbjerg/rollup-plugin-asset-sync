@@ -31,4 +31,6 @@ export default {
 }
 ```
 
+Use the option `verbose: true` to enable console logging file actions
+
 Tested on Node.js v. 10.8.0 and Rollup v. 0.62.0
