@@ -14,7 +14,7 @@ var fsUnlink = function (file) { return new Promise(function (acc, rej) {
         else { acc(); }
     });
 }); };
-
+var flatten = function (list) { return list.reduce(function (a, b) { return a.concat(Array.isArray(b) ? flatten(b) : b); }, []); };
 var dirOk = function (dir, create) {
     if ( create === void 0 ) create = false;
 
@@ -50,8 +50,8 @@ function syncDirs(ref) {
 
     if (!dirOk(inputPath) || !dirOk(outputPath, true)) { return; }
 
-    var inputFiles = walkSync(inputPath);
-    var outputFiles = walkSync(outputPath);
+    var inputFiles = flatten(walkSync(inputPath));
+    var outputFiles = flatten(walkSync(outputPath));
 
     var toCopy = [];
     var toUnlink = [];
@@ -60,6 +60,7 @@ function syncDirs(ref) {
         var fOut = fIn.replace(inputPath, outputPath);
         if (!outputFiles.includes(fOut)) {
             if (verbose) { console.log(("copy: " + fIn)); }
+            dirOk(path.dirname(fOut), true);
             return toCopy.push({in: fIn, out: fOut});
         }
         else {
@@ -75,6 +76,7 @@ function syncDirs(ref) {
         var fIn = fOut.replace(inputPath, outputPath);
         if (!inputFiles.includes(fIn)) {
             if (verbose) { console.log(("unlink: " + fIn)); }
+
             return toUnlink.push(fOut);
         }
     });

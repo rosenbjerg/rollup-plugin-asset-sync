@@ -2,7 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const walkSync = (d) => fs.statSync(d).isDirectory() ? fs.readdirSync(d).map(f => walkSync(path.join(d, f))) : d;
+const walkSync = d => fs.statSync(d).isDirectory() ? fs.readdirSync(d).map(f => walkSync(path.join(d, f))) : d;
 const fsCopy = fileObj => new Promise((acc, rej) => {
     fs.copyFile(fileObj.in, fileObj.out, err => {
         if (err) rej(err);
@@ -15,7 +15,7 @@ const fsUnlink = file => new Promise((acc, rej) => {
         else acc();
     })
 });
-
+const flatten = list => list.reduce((a, b) => a.concat(Array.isArray(b) ? flatten(b) : b), []);
 const dirOk = (dir, create = false) => {
     try {
         fs.statSync(dir);
@@ -45,8 +45,8 @@ function syncDirs({input, output, debug: verbose}) {
 
     if (!dirOk(inputPath) || !dirOk(outputPath, true)) return;
 
-    const inputFiles = walkSync(inputPath);
-    const outputFiles = walkSync(outputPath);
+    const inputFiles = flatten(walkSync(inputPath));
+    const outputFiles = flatten(walkSync(outputPath));
 
     const toCopy = [];
     const toUnlink = [];
@@ -55,6 +55,7 @@ function syncDirs({input, output, debug: verbose}) {
         const fOut = fIn.replace(inputPath, outputPath);
         if (!outputFiles.includes(fOut)) {
             if (verbose) console.log(`copy: ${fIn}`);
+            dirOk(path.dirname(fOut), true);
             return toCopy.push({in: fIn, out: fOut});
         }
         else {
@@ -70,6 +71,7 @@ function syncDirs({input, output, debug: verbose}) {
         const fIn = fOut.replace(inputPath, outputPath);
         if (!inputFiles.includes(fIn)) {
             if (verbose) console.log(`unlink: ${fIn}`);
+
             return toUnlink.push(fOut);
         }
     });
