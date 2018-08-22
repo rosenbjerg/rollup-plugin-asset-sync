@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-asset-sync",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "Asset files synchronization for rollup",
   "main": "dist/rollup-plugin-asset-sync.js",
   "module": "dist/rollup-plugin-asset-sync.module.js",

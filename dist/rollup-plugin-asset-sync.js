@@ -5,7 +5,18 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var fs = _interopDefault(require('fs'));
 var path = _interopDefault(require('path'));
 
-var walkSync = function (d) { return fs.statSync(d).isDirectory() ? fs.readdirSync(d).map(function (f) { return walkSync(path.join(d, f)); }) : d; };
+var walk = function (p, accumulator) {
+    if ( accumulator === void 0 ) accumulator = [];
+
+    if (fs.statSync(p).isDirectory()) {
+        fs.readdirSync(p).forEach(function (subPath) { return walk(path.join(p, subPath), accumulator); });
+    }
+    else {
+        accumulator.push(p);
+    }
+    return accumulator;
+};
+
 var fsCopy = function (fileObj) { return new Promise(function (acc, rej) {
     fs.copyFile(fileObj.in, fileObj.out, function (err) {
         if (err) { rej(err); }
@@ -18,7 +29,6 @@ var fsUnlink = function (file) { return new Promise(function (acc, rej) {
         else { acc(); }
     });
 }); };
-var flatten = function (list) { return list.reduce(function (a, b) { return a.concat(Array.isArray(b) ? flatten(b) : b); }, []); };
 var dirOk = function (dir, create) {
     if ( create === void 0 ) create = false;
 
@@ -38,7 +48,7 @@ var dirOk = function (dir, create) {
 function syncDirs(ref) {
     var input = ref.input;
     var output = ref.output;
-    var verbose = ref.debug;
+    var verbose = ref.verbose;
 
     if (!input || !output) {
         throw new Error("missing input and/or output directory");
@@ -54,8 +64,8 @@ function syncDirs(ref) {
 
     if (!dirOk(inputPath) || !dirOk(outputPath, true)) { return; }
 
-    var inputFiles = flatten(walkSync(inputPath));
-    var outputFiles = flatten(walkSync(outputPath));
+    var inputFiles = walk(inputPath).map(function (f) { return path.resolve(f); });
+    var outputFiles = walk(outputPath).map(function (f) { return path.resolve(f); });
 
     var toCopy = [];
     var toUnlink = [];
@@ -85,8 +95,9 @@ function syncDirs(ref) {
         }
     });
     return Promise.all([
-        Promise.all(toCopy.map(fsCopy)),
-        Promise.all(toUnlink.map(fsUnlink)) ])
+        Promise.all(toCopy.map(fsCopy)).catch(function (err) { return verbose && console.log('could not copy', err); }),
+        Promise.all(toUnlink.map(fsUnlink)).catch(function (err) { return verbose && console.log('could not unlink', err); })
+    ])
 }
 
 /**
@@ -99,7 +110,7 @@ function sync(options) {
     if ( options === void 0 ) options = { };
 
     var defaultOptions = {
-        debug: false
+        verbose: false
     };
     Object.assign(defaultOptions, options);
     return {

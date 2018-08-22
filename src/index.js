@@ -2,7 +2,16 @@
 import fs from 'fs';
 import path from 'path';
 
-const walkSync = d => fs.statSync(d).isDirectory() ? fs.readdirSync(d).map(f => walkSync(path.join(d, f))) : d;
+const walk = (p, accumulator = []) => {
+    if (fs.statSync(p).isDirectory()) {
+        fs.readdirSync(p).forEach(subPath => walk(path.join(p, subPath), accumulator));
+    }
+    else {
+        accumulator.push(p);
+    }
+    return accumulator;
+};
+
 const fsCopy = fileObj => new Promise((acc, rej) => {
     fs.copyFile(fileObj.in, fileObj.out, err => {
         if (err) rej(err);
@@ -15,7 +24,6 @@ const fsUnlink = file => new Promise((acc, rej) => {
         else acc();
     })
 });
-const flatten = list => list.reduce((a, b) => a.concat(Array.isArray(b) ? flatten(b) : b), []);
 const dirOk = (dir, create = false) => {
     try {
         fs.statSync(dir);
@@ -30,7 +38,7 @@ const dirOk = (dir, create = false) => {
     }
 };
 
-function syncDirs({input, output, debug: verbose}) {
+function syncDirs({input, output, verbose}) {
     if (!input || !output) {
         throw new Error("missing input and/or output directory");
     }
@@ -45,8 +53,8 @@ function syncDirs({input, output, debug: verbose}) {
 
     if (!dirOk(inputPath) || !dirOk(outputPath, true)) return;
 
-    const inputFiles = flatten(walkSync(inputPath));
-    const outputFiles = flatten(walkSync(outputPath));
+    const inputFiles = walk(inputPath).map(f => path.resolve(f));
+    const outputFiles = walk(outputPath).map(f => path.resolve(f));
 
     const toCopy = [];
     const toUnlink = [];
@@ -76,8 +84,8 @@ function syncDirs({input, output, debug: verbose}) {
         }
     });
     return Promise.all([
-        Promise.all(toCopy.map(fsCopy)),
-        Promise.all(toUnlink.map(fsUnlink)),
+        Promise.all(toCopy.map(fsCopy)).catch(err => verbose && console.log('could not copy', err)),
+        Promise.all(toUnlink.map(fsUnlink)).catch(err => verbose && console.log('could not unlink', err))
     ])
 }
 
@@ -89,7 +97,7 @@ function syncDirs({input, output, debug: verbose}) {
  */
 export default function sync(options = { }) {
     const defaultOptions = {
-        debug: false
+        verbose: false
     };
     Object.assign(defaultOptions, options);
     return {
