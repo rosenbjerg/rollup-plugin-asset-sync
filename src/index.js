@@ -38,13 +38,15 @@ const dirOk = (dir, create = false) => {
     }
 };
 
+const mtimeEqual = (t1, t2) => !(t1 < t2 || t1 > t2);
+
 function syncDirs({input, output, verbose}) {
     if (!input || !output) {
         throw new Error("missing input and/or output directory");
     }
 
-    const inputPath = path.resolve(input);
-    const outputPath = path.resolve(output);
+    const inputPath = path.normalize(input);
+    const outputPath = path.normalize(output);
 
     if (inputPath === outputPath) {
         throw new Error("the output directory cannot be the same as the input");
@@ -69,17 +71,16 @@ function syncDirs({input, output, verbose}) {
         else {
             const fInStat = fs.statSync(fIn);
             const fOutStat = fs.statSync(fOut);
-            if (fInStat.mtime !== fOutStat.mtime) {
+            if (!mtimeEqual(fInStat.mtime, fOutStat.mtime)) {
                 if (verbose) console.log(`overwrite: ${fIn}`);
                 return toCopy.push({in: fIn, out: fOut});
             }
         }
     });
     outputFiles.forEach(fOut => {
-        const fIn = fOut.replace(inputPath, outputPath);
+        const fIn = fOut.replace(outputPath, inputPath);
         if (!inputFiles.includes(fIn)) {
             if (verbose) console.log(`unlink: ${fIn}`);
-
             return toUnlink.push(fOut);
         }
     });
